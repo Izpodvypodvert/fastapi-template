@@ -9,12 +9,15 @@ class UserRead(schemas.BaseUser[UUID4]):
     id: UUID
     email: EmailStr
     is_active: bool
+    username: str
 
 class UserCreate(schemas.BaseUserCreate):
     email: EmailStr
     password: str
+    username: str
 
 class UserUpdate(schemas.BaseUserUpdate):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    username: str
 
