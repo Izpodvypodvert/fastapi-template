@@ -25,12 +25,17 @@ This template comes with the following features:
 
 Make sure to set up a .env file with the required environment variables for PostgreSQL and JWT. You can use .env.example as a reference.
 Example:
-POSTGRES_USER=myuser
-POSTGRES_PASSWORD=mypassword
-POSTGRES_DB=mydatabase
-DATABASE_URL=postgresql+asyncpg://myuser:mypassword@localhost/mydatabase
 
-SECRET_KEY=your_jwt_secret_key
+```bash
+# PostgreSQL configuration
+POSTGRES_USER=myuser              # Имя пользователя базы данных
+POSTGRES_PASSWORD=mypassword      # Пароль для пользователя
+POSTGRES_DB=mydatabase            # Название базы данных
+DATABASE_URL=postgresql+asyncpg://myuser:mypassword@localhost/mydatabase  # URL для подключения к базе данных
+
+# JWT Secret key for authentication
+SECRET_KEY=your_jwt_secret_key    # Секретный ключ для подписи JWT токенов
+```
 
 ## Build and Run
 
