@@ -42,7 +42,7 @@ CLIENT_SECRET=Client Secret from provider
 
 ## **Register your OAuth provider**:
 
-    - Go to the [Google API Console](https://console.cloud.google.com/apis) (or another provider's console) .
+    - Go to the [Google API Console](https://console.cloud.google.com/apis) or another provider's console.
     - Create a new project and configure OAuth credentials.
     - Set up your **Redirect URI** to point to your FastAPI callback endpoint, e.g., `http://localhost:8000/auth/google/callback`.
     - Copy your **Client ID** and **Client Secret**.
