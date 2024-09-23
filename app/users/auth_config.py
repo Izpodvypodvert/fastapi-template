@@ -11,14 +11,11 @@ from app.users.oauth_config import google_oauth_backend
 from app.users.manager import get_user_manager
 
 
-# Настройка транспорта для Cookie
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
 
-# Стратегия JWT
 def get_jwt_strategy() -> JWTStrategy:
     return JWTStrategy(secret=settings.secret, lifetime_seconds=3600)
 
-# Настройка бэкенда аутентификации
 auth_backend = AuthenticationBackend(
     name="jwt",
     transport=bearer_transport,
