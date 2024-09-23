@@ -24,7 +24,7 @@ auth_backend = AuthenticationBackend(
 
 fastapi_users = FastAPIUsers[User, UUID4](
     get_user_manager,
-    [auth_backend, google_oauth_backend],
+    [google_oauth_backend, auth_backend],
 )
 
 current_active_user = fastapi_users.current_user(active=True)
