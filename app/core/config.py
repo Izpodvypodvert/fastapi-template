@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     postgres_db: str = ""
     host: str = ""
     secret: str = ""
+    client_id: str = ""
+    client_secret: str = ""
 
     class Config:
         env_file = ".env"

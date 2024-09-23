@@ -2,10 +2,16 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from app.api.v1.user_router import router as user_router
+from app.api.v1.oauth import router as oauth_router
+from app.core.config import settings
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
 
 app.include_router(user_router)
+app.include_router(oauth_router)
+
+app.add_middleware(SessionMiddleware, secret_key=settings.secret)
 
 app.add_middleware(
     CORSMiddleware,
