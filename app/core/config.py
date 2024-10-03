@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     secret: str = ""
     client_id: str = ""
     client_secret: str = ""
-
+    frontend_oauth_redirect_url: str = ""
+        
     class Config:
         env_file = ".env"
         

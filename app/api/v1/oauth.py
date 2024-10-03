@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Request, Depends
+from fastapi.responses import RedirectResponse
 
+from app.core.config import settings
 from app.users.auth_config import get_user_manager
 from app.users.manager import UserManager
 from app.users.oauth_config import oauth
@@ -19,10 +21,8 @@ async def auth_google_callback(
         user_info = await get_google_user_info(request, oauth_client)
         user = await get_or_create_user(user_info, user_manager)
         access_token = await generate_access_token(user)
-        return {
-            "access_token": access_token,
-            "token_type": "bearer"
-        }
+        redirect_url = f"{settings.frontend_oauth_redirect_url}={access_token}"
+        return RedirectResponse(redirect_url)
     except Exception as e:
         return {"error": str(e)}
 
