@@ -1,6 +1,7 @@
 from authlib.integrations.starlette_client import OAuth
 from fastapi import HTTPException, Request
 from fastapi_users.authentication import Strategy
+from fastapi_users.exceptions import UserNotExists
 from app.users.auth_config import auth_backend
 from app.users.manager import UserManager
 from app.users.schemas import UserCreate
@@ -10,9 +11,9 @@ async def get_or_create_user(user_info: dict, user_manager: UserManager) -> User
     """Search for or create a user."""
     email = user_info.get("email")
     username = user_info.get("name")
-    user = await user_manager.get_by_email(email)
-
-    if user is None:
+    try:
+        user = await user_manager.get_by_email(email)
+    except UserNotExists:
         user_create = UserCreate(
             email=email,
             username=username,
