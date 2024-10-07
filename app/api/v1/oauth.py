@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 
 from app.core.config import settings
+from app.core.logger import logger
 from app.users.auth_config import get_user_manager
 from app.users.manager import UserManager
 from app.users.oauth_config import oauth
@@ -24,7 +25,8 @@ async def auth_google_callback(
         redirect_url = f"{settings.frontend_oauth_redirect_url}={access_token}"
         return RedirectResponse(redirect_url)
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(str(e))
+        return RedirectResponse(settings.frontend_login_redirect_url)
 
 
 @router.get("/auth/google/login")
@@ -33,5 +35,6 @@ async def google_login(request: Request, oauth_client = Depends(lambda: oauth)):
         redirect_uri = request.url_for("auth_google_callback")
         return await oauth_client.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(str(e))
+        return RedirectResponse(settings.frontend_login_redirect_url)
 
