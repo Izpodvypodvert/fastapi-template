@@ -38,6 +38,8 @@ DATABASE_URL=postgresql+asyncpg://myuser:mypassword@localhost/mydatabase
 SECRET=your_jwt_secret_key
 CLIENT_ID=Client ID from provider
 CLIENT_SECRET=Client Secret from provider
+FRONTEND_BASE_URL=The base URL of your frontend application
+FRONTEND_LOGIN_REDIRECT_URL=Login URL of your frontend application
 FRONTEND_OAUTH_REDIRECT_URL=Defines the URL where the frontend application will redirect users after successful authentication through an OAuth provider
 ```
 
