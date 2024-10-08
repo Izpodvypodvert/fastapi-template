@@ -7,10 +7,10 @@ from app.core.config import settings
 
 engine: AsyncEngine = create_async_engine(settings.database_url, echo=False, future=True)
 
-AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+async_session_maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as async_session:
+    async with async_session_maker() as async_session:
         yield async_session
 
