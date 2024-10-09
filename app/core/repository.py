@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import Generic, Optional, Type, TypeVar, TypedDict
 
 from sqlalchemy import update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,12 +22,20 @@ class AbstractRepository(ABC):
 
     @abstractmethod
     async def delete(self, **filter_by): ...
-    
-    
-class SQLAlchemyRepository(AbstractRepository):
-    model: Type[DeclarativeMeta] = None
+   
 
-    def __init__(self, session: AsyncSession):
+class SQLAlchemyRepository(AbstractRepository):
+    def __init__(self, model: Type[DeclarativeMeta], session: AsyncSession):
+        """
+        Initializes the repository with a specific SQLAlchemy model and session.
+
+        Args:
+            model (Type[DeclarativeMeta]): The SQLAlchemy model class to use for queries.
+            session (AsyncSession): The SQLAlchemy asynchronous session for database interactions.
+        """
+        if not isinstance(model, DeclarativeMeta):
+            raise TypeError("model must be a SQLAlchemy declarative model.")
+        self.model = model
         self.session = session
 
     async def find_one_or_none(self, **filter_by):
@@ -40,7 +48,7 @@ class SQLAlchemyRepository(AbstractRepository):
         result = await self.session.execute(statement)
         return result.scalars().all()
 
-    async def insert_data(self, **data):
+    async def insert_data(self, **data: dict):
         entity = self.model(**data)
         self.session.add(entity)
         await self.session.commit()
@@ -48,7 +56,12 @@ class SQLAlchemyRepository(AbstractRepository):
         return entity
 
     async def update_fields_by_id(self, entity_id, **data):
-        statement = update(self.model).where(self.model.id == entity_id).values(**data).execution_options(synchronize_session="fetch")
+        statement = (
+        update(self.model)
+        .where(getattr(self.model, "id") == entity_id)
+        .values(**data)
+        .execution_options(synchronize_session="fetch")
+    )
         result = await self.session.execute(statement)
         await self.session.commit()
         return result.rowcount

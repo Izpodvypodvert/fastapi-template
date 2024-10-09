@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.user_router import router as user_router
 from app.api.v1.oauth import router as oauth_router
+from app.api.v1.todo import todo_router
 from app.core.config import settings
 from app.core.logger import logger
 from starlette.middleware.sessions import SessionMiddleware
@@ -11,6 +12,7 @@ app = FastAPI()
 
 app.include_router(user_router)
 app.include_router(oauth_router)
+app.include_router(todo_router)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret)
 

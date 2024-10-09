@@ -10,6 +10,7 @@ from app.users.models import Base
 
 from app.core.config import settings
 from app.users.models import User
+from app.todo.models import Todo
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
