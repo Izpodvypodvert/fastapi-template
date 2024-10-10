@@ -1,14 +1,15 @@
 from enum import Enum
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import  Any, Callable, Generic, Type, TypeVar
+from typing import  Any, Callable, Coroutine, Generic, Type, TypeAlias, TypeVar
 from pydantic import BaseModel
 
-from app.core.exceptions import OpenAPIDocExtraResponse
+from app.core.exceptions import DEFAULT_RESPONSES, OpenAPIResponses
 from app.core.service import AbstractService, AbstractServiceWithUser
 from app.users.models import User
 
 
 S = TypeVar("S", bound="AbstractService")
+
 
 class BaseRouter(Generic[S]):
     """
@@ -47,11 +48,7 @@ class BaseRouter(Generic[S]):
         self.model_create = model_create
         self.model_update = model_update
         self.service_dependency = service_dependency
-        self.responses: dict[int | str, dict[str, Any]] = {
-            401: {"model": OpenAPIDocExtraResponse},
-            404: {"model": OpenAPIDocExtraResponse},
-        }
-
+        self.responses: OpenAPIResponses = DEFAULT_RESPONSES
         self._create_routes()
 
     def _create_routes(self):
@@ -107,6 +104,7 @@ class BaseRouter(Generic[S]):
 
 
 U = TypeVar("U", bound="AbstractServiceWithUser")
+CurrentUserDependency: TypeAlias = Callable[..., Coroutine[Any, Any, User | None]]
 
 
 class BaseRouterWithUser(BaseRouter, Generic[U]):
@@ -138,16 +136,22 @@ class BaseRouterWithUser(BaseRouter, Generic[U]):
         service_dependency: Callable[..., U],
         prefix: str,
         tags: list[str | Enum] | None,
-        current_user: User
+        current_user: CurrentUserDependency
         ):
-        super().__init__(model, model_create, model_update, service_dependency, prefix, tags)
-        self.current_user = current_user
+        self.router = APIRouter(prefix=prefix, tags=tags)
+        self.model = model
+        self.model_create = model_create
+        self.model_update = model_update
+        self.service_dependency = service_dependency
+        self.responses: OpenAPIResponses = DEFAULT_RESPONSES
+        self._create_routes(current_user)
+ 
 
-    def _create_routes(self):
+    def _create_routes(self, current_user: CurrentUserDependency):
         @self.router.get("/", response_model=list[self.model])
         async def get_items(
             service: U = Depends(self.service_dependency),
-            user: User = Depends(self.current_user)
+            user: User = Depends(current_user)
             ):
             return await service.get_all(user)
 
@@ -155,7 +159,7 @@ class BaseRouterWithUser(BaseRouter, Generic[U]):
         async def get_item(
             item_id: int, 
             service: U = Depends(self.service_dependency),
-            user: User = Depends(self.current_user)
+            user: User = Depends(current_user)
         ):
             item = await service.get_by_id(item_id, user)
             return item
@@ -164,7 +168,7 @@ class BaseRouterWithUser(BaseRouter, Generic[U]):
         async def create_item(
             item: self.model_create, # type: ignore
             service: U = Depends(self.service_dependency),
-            user: User = Depends(self.current_user),
+            user: User = Depends(current_user),
         ):
             new_item = await service.create(item, user)
             return new_item
@@ -174,7 +178,7 @@ class BaseRouterWithUser(BaseRouter, Generic[U]):
             item_id: int,
             item: self.model_update, # type: ignore
             service: U = Depends(self.service_dependency),
-            user: User = Depends(self.current_user),
+            user: User = Depends(current_user),
         ):
             await service.update(item_id, user, **item.dict())
             return {"message": f"Item has been successfully updated"}
@@ -187,7 +191,7 @@ class BaseRouterWithUser(BaseRouter, Generic[U]):
         async def delete_item(
             item_id: int,
             service: U = Depends(self.service_dependency),
-            user: User = Depends(self.current_user)
+            user: User = Depends(current_user)
         ):
             deleted_count = await service.delete(item_id, user)
             if deleted_count == 0:

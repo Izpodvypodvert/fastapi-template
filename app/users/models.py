@@ -19,3 +19,4 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     """
     username = Column(String, unique=True, nullable=False)
     oauth_accounts = relationship("OAuthAccount", lazy="joined", cascade="all, delete-orphan")
+    todo = relationship("Todo", back_populates="user", cascade="all, delete-orphan")

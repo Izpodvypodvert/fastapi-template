@@ -1,3 +1,4 @@
+from typing import Any, TypeAlias
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 
@@ -7,10 +8,12 @@ class MissingRepositoryError(Exception):
         message = f"В TransactionManager в метод __aenter__ необходимо добавить атрибут '{entity_name}'."
         super().__init__(message)
 
+
 class OpenAPIDocExtraResponse(BaseModel):
     """Class for extra responses in OpenAPI doc"""
 
     detail: str
+
 
 class AppException(HTTPException):
     """Base class for all courses exceptions"""
@@ -39,3 +42,30 @@ class UnauthorizedAccessException(AppException):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=message,
         )
+
+
+OpenAPIResponses: TypeAlias = dict[int | str, dict[str, Any]]
+
+
+DEFAULT_RESPONSES: OpenAPIResponses = {
+    401: {
+        "description": "Unauthorized - The user is not authenticated",
+        "model": OpenAPIDocExtraResponse,
+        "content": {"application/json": {"example": {"detail": "Not authenticated"}}},
+    },
+    403: {
+        "description": "Forbidden - The user does not have permission to access this resource",
+        "model": OpenAPIDocExtraResponse,
+        "content": {"application/json": {"example": {"detail": "Not enough permissions"}}},
+    },
+    404: {
+        "description": "Not Found - The requested resource could not be found",
+        "model": OpenAPIDocExtraResponse,
+        "content": {"application/json": {"example": {"detail": "Item not found"}}},
+    },
+    500: {
+        "description": "Internal Server Error",
+        "model": OpenAPIDocExtraResponse,
+        "content": {"application/json": {"example": {"detail": "An error occurred"}}},
+    },
+}

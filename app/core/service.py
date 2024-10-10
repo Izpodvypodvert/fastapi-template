@@ -1,15 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, Optional, Type, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Optional, Type, TypeVar, cast, final
 
-from httpx import delete
-from pydantic import UUID4, BaseModel
+from pydantic import BaseModel
 
 from app.core.repository import AbstractRepository
 from app.core.transaction_manager import ITransactionManager
-
-from app.core.exceptions import IncorrectIdException, MissingRepositoryError, UnauthorizedAccessException
+from app.core.exceptions import IncorrectIdException, MissingRepositoryError
 from app.users.models import User
-from app.users.schemas import UserUpdate
 
 
 if TYPE_CHECKING:
@@ -34,12 +31,19 @@ class AbstractService(ABC, Generic[T]):
         self.entity_type = entity_type
         self.transaction_manager = transaction_manager
         self.user_manager = user_manager
+        self._repository: Optional[AbstractRepository] = None
 
+    @final
     @property
-    @abstractmethod
     def repository(self) -> AbstractRepository:
-        """Property to access the repository associated with the entity."""
-        pass
+        if self._repository is None:
+            try:
+                self._repository = getattr(
+                    self.transaction_manager, self.entity_type.__name__.lower()
+                )
+            except AttributeError as e:
+                raise MissingRepositoryError(self.entity_type.__name__.lower()) from e
+        return cast(AbstractRepository, self._repository)
 
     @abstractmethod
     async def get_all(self) -> list[T] | None:
@@ -67,28 +71,12 @@ class AbstractService(ABC, Generic[T]):
         pass
     
     
-class AbstractServiceWithUser(ABC, Generic[T]):
+class AbstractServiceWithUser(AbstractService, Generic[T]):
     """
     Abstract base class for service layer classes that require user context.
     Provides the interface for user-dependent CRUD operations and manages the repository
     interactions through a transaction manager.
     """
-
-    def __init__(
-        self,
-        entity_type: Type[T],
-        transaction_manager: "ITransactionManager",
-        user_manager: "UserManager",
-    ):
-        self.entity_type = entity_type
-        self.transaction_manager = transaction_manager
-        self.user_manager = user_manager
-
-    @property
-    @abstractmethod
-    def repository(self) -> AbstractRepository:
-        """Property to access the repository associated with the entity."""
-        pass
 
     @abstractmethod
     async def get_all(self, user: User) -> list[T] | None:
@@ -166,34 +154,7 @@ class BaseService(AbstractService, Generic[T]):
     Base service class providing common CRUD operations for a given entity type.
     Manages interaction with the repository and ensures operations are wrapped
     in a transaction.
-
-    Attributes:
-    - entity_type (Type[T]): The type of the entity being managed by the service.
-    - transaction_manager (ITransactionManager): Manages database transactions.
-    - user_manager (UserManager): Handles user-related operations and authentication.
-    - _repository (AbstractRepository): Repository instance for the entity, lazily initialized.
     """
-    def __init__(
-        self,
-        entity_type: Type[T],
-        transaction_manager: ITransactionManager,
-        user_manager: "UserManager",
-    ):
-        self.entity_type = entity_type
-        self.transaction_manager = transaction_manager
-        self._repository: Optional[AbstractRepository] = None
-        self.user_manager = user_manager
-
-    @property
-    def repository(self) -> AbstractRepository:
-        if self._repository is None:
-            try:
-                self._repository = getattr(
-                    self.transaction_manager, self.entity_type.__name__.lower()
-                )
-            except AttributeError as e:
-                raise MissingRepositoryError(self.entity_type.__name__.lower()) from e
-        return cast(AbstractRepository, self._repository)
 
     async def get_all(self) -> list[T] | None:
         async with self.transaction_manager:
@@ -206,17 +167,14 @@ class BaseService(AbstractService, Generic[T]):
                 raise IncorrectIdException(f"Incorrect {self.entity_type.__name__} id")
             return entity
 
-    async def create(self, entity: T) -> T:
+    async def create(self, entity: T) -> T | None:
         async with self.transaction_manager:
-            created_entity = await self.repository.insert_data(**entity.model_dump())
-            return cast(T, created_entity)
+            return await self.repository.insert_data(**entity.model_dump())
 
-    async def delete(self, entity_id: int) -> int:
+    async def delete(self, entity_id: int) -> int | None:
         async with self.transaction_manager:
-            deleted_count = await self.repository.delete(id=entity_id)
-            return cast(int, deleted_count)
+            return await self.repository.delete(id=entity_id)
 
-    async def update(self, entity_id, **data) -> int:
+    async def update(self, entity_id, **data) -> int | None:
         async with self.transaction_manager:
-            updated_count = await self.repository.update_fields_by_id(entity_id, **data)
-            return cast(int, updated_count)
+            return await self.repository.update_fields_by_id(entity_id, **data)
