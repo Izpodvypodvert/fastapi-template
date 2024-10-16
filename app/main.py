@@ -1,18 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.user_router import router as user_router
-from app.api.v1.oauth import router as oauth_router
-from app.api.v1.todo import todo_router
+from app.api.v1 import routers_v1
 from app.core.config import settings
 from app.core.logger import logger
 from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
-
-app.include_router(user_router)
-app.include_router(oauth_router)
-app.include_router(todo_router)
 
 app.add_middleware(SessionMiddleware, secret_key=settings.secret)
 
@@ -30,6 +24,6 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     return response
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+for router in routers_v1:
+    app.include_router(router, prefix="/v1")
+    

@@ -22,3 +22,9 @@ router.include_router(
     prefix="/users",
     tags=["users"]
 )
+
+router.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
