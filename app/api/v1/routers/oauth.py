@@ -6,6 +6,7 @@ from app.core.logger import logger
 from app.users.auth_config import get_user_manager
 from app.users.manager import UserManager
 from app.users.oauth_config import oauth
+from app.users.schemas import UserUpdateWithVerification
 from app.users.service import generate_access_token, get_google_user_info, get_or_create_user
 
 
@@ -22,6 +23,8 @@ async def auth_google_callback(
         user_info = await get_google_user_info(request, oauth_client)
         user = await get_or_create_user(user_info, user_manager)
         access_token = await generate_access_token(user)
+        user_update = UserUpdateWithVerification(is_verified=True)
+        await user_manager.update(user_update, user)
         redirect_url = f"{settings.frontend_oauth_redirect_url}={access_token}"
         return RedirectResponse(redirect_url)
     except Exception as e:

@@ -19,5 +19,7 @@ class UserCreate(schemas.BaseUserCreate):
 class UserUpdate(schemas.BaseUserUpdate):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
-    username: str
+    username: Optional[str] = None
 
+class UserUpdateWithVerification(UserUpdate):
+    is_verified: Optional[bool] = None 
