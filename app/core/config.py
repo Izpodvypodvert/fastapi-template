@@ -28,5 +28,9 @@ class Settings(BaseSettings):
     def reset_password_url(self):
         return f"{self.frontend_base_url}/reset-password?token"
     
+    @property
+    def verification_url(self):
+        return f"{self.frontend_base_url}/verify-email?token"
+    
     
 settings = Settings()
