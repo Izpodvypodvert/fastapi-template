@@ -3,7 +3,7 @@ from fastapi_users.exceptions import InvalidVerifyToken, UserAlreadyVerified
 
 from app.users.auth_config import fastapi_users, auth_backend
 from app.users.manager import UserManager, get_user_manager
-from app.users.schemas import UserRead, UserCreate, UserUpdate, UserUpdateWithVerification
+from app.users.schemas import UserRead, UserCreate, UserUpdate, VerifyEmailRequest
 
 
 router = APIRouter()
@@ -32,12 +32,11 @@ router.include_router(
     tags=["auth"],
 )
 
-@router.get("/auth/verify-email", tags=["auth"])
-async def verify_email(token: str, user_manager: UserManager = Depends(get_user_manager)):
+@router.post("/auth/verify-email", tags=["auth"])
+async def verify_email(request: VerifyEmailRequest, user_manager: UserManager = Depends(get_user_manager)):
     try:
-        user = await user_manager.verify(token)
+        user = await user_manager.verify(request.token)
         return {"message": "Email успешно верифицирован"}
-    
     except InvalidVerifyToken:
         raise HTTPException(status_code=400, detail="Неверный или истекший токен")
     except UserAlreadyVerified:

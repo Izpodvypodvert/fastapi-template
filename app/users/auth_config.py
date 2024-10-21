@@ -11,7 +11,7 @@ from app.users.oauth_config import google_oauth_backend
 from app.users.manager import get_user_manager
 
 
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+bearer_transport = BearerTransport(tokenUrl="v1/auth/jwt/login")
 
 def get_jwt_strategy() -> JWTStrategy:
     return JWTStrategy(secret=settings.secret, lifetime_seconds=3600)

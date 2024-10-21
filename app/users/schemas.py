@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi_users import schemas
 from uuid import UUID
 
-from pydantic import UUID4, EmailStr
+from pydantic import UUID4, BaseModel, EmailStr
 
 
 class UserRead(schemas.BaseUser[UUID4]):
@@ -23,3 +23,7 @@ class UserUpdate(schemas.BaseUserUpdate):
 
 class UserUpdateWithVerification(UserUpdate):
     is_verified: Optional[bool] = None 
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+    
