@@ -2,12 +2,13 @@ from pydantic import UUID4
 import smtplib
 from email.mime.text import MIMEText
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi_users import BaseUserManager, UUIDIDMixin
 from fastapi_users.jwt import generate_jwt
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 
 from app.core.db import get_async_session, AsyncSession
+from app.core.logger import logger
 from app.users.models import User
 from app.core.config import settings
 
@@ -22,7 +23,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
     verification_token_secret = settings.secret
 
     async def on_after_register(self, user: User, request: None = None):
-        print(f"User {user.email} has registered.")
+        logger.info(f"User {user.email} has registered.")
         if not user.is_verified:
             token = await self._generate_token(user)
             await self._send_verification_email(user.email, token)
@@ -31,7 +32,11 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
         await self._send_reset_password_email(user.email, token)
 
     async def on_after_request_verify(self, user: User, token: str, request: None = None):
-        print(f"Verification requested for user {user.email}. Verification token: {token}")
+        logger.info(f"Verification requested for user {user.email}. Verification token: {token}")
+        
+    async def _handle_smtp_error(e: Exception, message: str):
+        logger.error(message, exc_info=e)
+        raise HTTPException(status_code=500, detail="Ошибка при отправке письма")
                
     async def _send_email(self, subject: str, email: str, message: str):
         msg = MIMEText(message)
@@ -39,11 +44,18 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
         msg['From'] = settings.email_address
         msg['To'] = email
 
-        with smtplib.SMTP(settings.smtp_address, settings.smtp_port) as server:
-            server.starttls()
-            server.login(settings.email_address, settings.email_password)
-            server.send_message(msg)
-    
+        try:
+            with smtplib.SMTP(settings.smtp_address, settings.smtp_port) as server:
+                server.starttls()
+                server.login(settings.email_address, settings.email_password)
+                server.send_message(msg)
+        except OSError as e:
+            error_message = f"Ошибка сети при отправке письма: {e}" if e.errno == 101 else f"Ошибка ОС при отправке письма: {e}"
+            await self._handle_smtp_error(e, error_message)
+        except (smtplib.SMTPConnectError, smtplib.SMTPAuthenticationError, smtplib.SMTPException) as e:
+            await self._handle_smtp_error(e, f"Ошибка SMTP: {e}")
+
+                    
     async def _send_reset_password_email(self, email: str, token: str):
         reset_url = f"{settings.reset_password_url}={token}"
         message = f"Для восстановления пароля перейдите по следующей ссылке: {reset_url}"
