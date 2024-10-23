@@ -29,8 +29,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
     async def on_after_forgot_password(self, user: User, token: str, request: None = None):
         await self._send_reset_password_email(user.email, token)
 
-    async def on_after_request_verify(self, user: User, token: str, request: None = None):
-        logger.info(f"Verification requested for user {user.email}. Verification token: {token}")
+    async def on_after_request_verify(self, user: User, request: None = None):
+        logger.info(f"Verification requested for user {user.email}.")
         await self._send_verification_email(user)
         
     async def _handle_smtp_error(e: Exception, message: str):
