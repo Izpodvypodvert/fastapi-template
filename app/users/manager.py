@@ -24,15 +24,14 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
 
     async def on_after_register(self, user: User, request: None = None):
         logger.info(f"User {user.email} has registered.")
-        if not user.is_verified:
-            token = await self._generate_token(user)
-            await self._send_verification_email(user.email, token)
+        await self._send_verification_email(user)
 
     async def on_after_forgot_password(self, user: User, token: str, request: None = None):
         await self._send_reset_password_email(user.email, token)
 
     async def on_after_request_verify(self, user: User, token: str, request: None = None):
         logger.info(f"Verification requested for user {user.email}. Verification token: {token}")
+        await self._send_verification_email(user)
         
     async def _handle_smtp_error(e: Exception, message: str):
         logger.error(message, exc_info=e)
@@ -61,10 +60,13 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
         message = f"Для восстановления пароля перейдите по следующей ссылке: {reset_url}"
         await self._send_email('Восстановление пароля', email, message)
 
-    async def _send_verification_email(self, email: str, token: str):
+    async def _send_verification_email(self, user: User):
+        if user.is_verified:
+            raise HTTPException(status_code=400, detail="Почта пользователя уже подтверждена!")
+        token = await self._generate_token(user)
         verification_url = f"{settings.verification_url}={token}"
         message = f"Для верификации email перейдите по следующей ссылке: {verification_url}"
-        await self._send_email('Верификация email', email, message)
+        await self._send_email('Верификация email', user.email, message)
 
     async def _generate_token(self, user: User) -> str:
         token_data = {
