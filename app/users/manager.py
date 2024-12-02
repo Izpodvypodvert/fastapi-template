@@ -33,7 +33,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID4]):
         logger.info(f"Verification requested for user {user.email}.")
         await self._send_verification_email(user)
         
-    async def _handle_smtp_error(e: Exception, message: str):
+    async def _handle_smtp_error(self, e: Exception, message: str):
         logger.error(message, exc_info=e)
         raise HTTPException(status_code=500, detail="Ошибка при отправке письма")
                
