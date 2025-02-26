@@ -41,6 +41,12 @@ CLIENT_SECRET=Client Secret from provider
 FRONTEND_BASE_URL=The base URL of your frontend application
 FRONTEND_LOGIN_REDIRECT_URL=Login URL of your frontend application
 FRONTEND_OAUTH_REDIRECT_URL=Defines the URL where the frontend application will redirect users after successful authentication through an OAuth provider
+
+# SMTP credentials
+EMAIL_ADDRESS=Your smtp email address
+EMAIL_PASSWORD=Your smtp email or app password
+SMTP_ADDRESS=smtp.gmail.com
+SMTP_PORT=587
 ```
 
 ## Register your OAuth provider
