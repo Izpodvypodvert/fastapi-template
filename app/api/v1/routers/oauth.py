@@ -25,7 +25,7 @@ async def auth_google_callback(
         access_token = await generate_access_token(user)
         user_update = UserUpdateWithVerification(is_verified=True)
         await user_manager.update(user_update, user)
-        redirect_url = f"{settings.frontend_oauth_redirect_url}={access_token}"
+        redirect_url = f"{settings.frontend_oauth_redirect_url}?token={access_token}"
         return RedirectResponse(redirect_url)
     except Exception as e:
         logger.error(str(e))
