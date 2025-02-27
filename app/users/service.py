@@ -7,7 +7,9 @@ from app.users.manager import UserManager
 from app.users.schemas import UserCreate
 
 
-async def get_or_create_user(user_info: dict, user_manager: UserManager) -> UserCreate:
+async def get_or_create_user(
+    user_info: dict, user_manager: UserManager, is_verified: bool = False
+) -> UserCreate:
     """Search for or create a user."""
     email = user_info.get("email")
     username = user_info.get("name")
@@ -17,15 +19,18 @@ async def get_or_create_user(user_info: dict, user_manager: UserManager) -> User
         user_create = UserCreate(
             email=email,
             username=username,
-            password="oauth_default_password", 
+            password="oauth_default_password",
+            is_verified=is_verified,
         )
         user = await user_manager.create(user_create)
     return user
+
 
 async def generate_access_token(user) -> str:
     """Generation of a JWT token."""
     auth_strategy: Strategy = auth_backend.get_strategy()
     return await auth_strategy.write_token(user)
+
 
 async def get_google_user_info(request: Request, oauth_client: OAuth) -> dict:
     """Getting user data from Google."""
